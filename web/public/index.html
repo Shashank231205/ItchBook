@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ItchBook — Live Order Book</title>
+    <meta
+      name="description"
+      content="A C++20 Nasdaq ITCH 5.0 feed handler and L3 limit order book, compiled to WebAssembly and running live in your browser."
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">▮▮</span>
+        <div>
+          <h1>ItchBook</h1>
+          <p>C++20 ITCH 5.0 order book engine · running in your browser via WebAssembly</p>
+        </div>
+      </div>
+      <a class="repo" href="https://github.com/Shashank231205/ItchBook" target="_blank" rel="noopener"
+        >View source on GitHub ↗</a
+      >
+    </header>
+
+    <main>
+      <section class="controls" aria-label="Replay controls">
+        <button id="play" class="primary" disabled>▶ Play</button>
+        <button id="step" disabled>Step</button>
+        <label>
+          Speed
+          <select id="speed">
+            <option value="10">10 msg/frame</option>
+            <option value="100" selected>100 msg/frame</option>
+            <option value="1000">1,000 msg/frame</option>
+            <option value="10000">10,000 msg/frame</option>
+          </select>
+        </label>
+        <button id="reset" disabled>New feed</button>
+        <button id="bench" class="accent" disabled>⚡ Benchmark full feed</button>
+        <span id="status" class="status">Loading WebAssembly engine…</span>
+      </section>
+
+      <section class="stats" aria-label="Engine statistics">
+        <div class="stat"><span class="label">Market time</span><span id="clock" class="value">—</span></div>
+        <div class="stat">
+          <span class="label">Messages</span><span id="messages" class="value">—</span>
+          <div class="progress"><div id="progress"></div></div>
+        </div>
+        <div class="stat"><span class="label">Engine latency</span><span id="latency" class="value">—</span></div>
+        <div class="stat"><span class="label">Trades</span><span id="trades" class="value">—</span></div>
+        <div class="stat"><span class="label">BBO changes</span><span id="bbo" class="value">—</span></div>
+      </section>
+
+      <div class="grid">
+        <section class="panel symbols" aria-label="Instruments">
+          <h2>Instruments</h2>
+          <div class="table-head"><span>Symbol</span><span>Bid</span><span>Ask</span><span>Orders</span></div>
+          <ul id="symbols"></ul>
+        </section>
+
+        <section class="panel ladder-panel" aria-label="Order book depth">
+          <h2>Depth <span id="ladder-symbol" class="muted"></span></h2>
+          <div class="table-head ladder-head"><span>Orders</span><span>Size</span><span>Price</span></div>
+          <div id="asks" class="ladder asks"></div>
+          <div id="spread" class="spread">—</div>
+          <div id="bids" class="ladder bids"></div>
+        </section>
+
+        <section class="panel tape-panel" aria-label="Trade tape">
+          <h2>Trades</h2>
+          <div class="table-head tape-head"><span>Time</span><span>Sym</span><span>Price</span><span>Size</span></div>
+          <ul id="tape" class="tape"></ul>
+        </section>
+      </div>
+
+      <section id="bench-result" class="bench-result" hidden></section>
+
+      <section class="about">
+        <h2>What you are looking at</h2>
+        <p>
+          A deterministic synthetic Nasdaq TotalView-ITCH 5.0 feed is generated and then replayed
+          message by message through the same C++ code as the native build: zero-copy parser,
+          price-time priority L3 books in an index-addressed pool, and a custom open-addressing
+          order-id map. The page only reads results out of WebAssembly memory. It never
+          reimplements book logic in JavaScript.
+        </p>
+        <p>
+          <strong>Engine latency</strong> is the wall time spent inside the engine per message
+          (render excluded). <strong>Benchmark</strong> replays the whole feed with no rendering.
+          Natively on Linux the engine sustains about 6M msg/s with p50 around 100 ns. See the
+          <a href="https://github.com/Shashank231205/ItchBook#benchmarks">benchmarks</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
