@@ -1,0 +1,62 @@
+name: Deploy web demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+
+      - name: Build WebAssembly module
+        run: |
+          emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-web --parallel
+
+      - name: Smoke test module in Node
+        run: |
+          cp build-web/web/itchbook.js build-web/web/itchbook.wasm web/public/
+          node --input-type=module -e "
+            import { loadEngine } from './web/public/engine.js';
+            const e = await loadEngine();
+            const total = e.init(8, 100000, 1);
+            e.runToEnd();
+            const s = e.stats();
+            if (s.processed !== total || s.unknownOrders !== 0 || s.trades === 0) process.exit(1);
+            console.log('ok', s);
+          "
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp web/public/* _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
