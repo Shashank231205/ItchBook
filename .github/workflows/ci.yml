@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.compiler.name }} / ${{ matrix.build_type }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - { name: gcc-13, cxx: g++-13 }
+          - { name: clang-18, cxx: clang++-18 }
+        build_type: [Debug, Release]
+    env:
+      CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DITCHBOOK_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --parallel 4
+
+      - name: End-to-end replay
+        if: matrix.build_type == 'Release'
+        run: |
+          ./build/apps/itchbook-gen /tmp/feed.itch --events 5000000 --instruments 100
+          ./build/apps/itchbook-replay /tmp/feed.itch --top 5
+
+      - name: Benchmarks (smoke run)
+        if: matrix.build_type == 'Release'
+        run: ./build/benchmarks/itchbook_benchmarks --benchmark_min_time=0.05s
+
+  sanitizers:
+    name: sanitizer / ${{ matrix.sanitizer }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: ["address,undefined", "thread"]
+    env:
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      # ThreadSanitizer cannot map its shadow memory with the kernel's default ASLR entropy.
+      - name: Reduce ASLR entropy
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DITCHBOOK_SANITIZERS=${{ matrix.sanitizer }}
+          -DITCHBOOK_BUILD_BENCHMARKS=OFF
+          -DITCHBOOK_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --parallel 4
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check formatting
+        run: |
+          git ls-files '*.hpp' '*.cpp' | xargs clang-format-18 --dry-run --Werror
