@@ -88,10 +88,10 @@ Sample output (this run was on a shared 4-vCPU GitHub Actions runner, so numbers
 
 ```
 messages           5000102 (book 5000100 | ignored 2 | malformed 0)
-elapsed            0.823 s
-throughput         6.08 M msg/s | 181 MiB/s
-latency (ns/msg)   p50 104 | p90 209 | p99 392 | p99.9 732 | p99.99 12562 | max 277282
-top-of-book        138815 changes | 138815 consumed | 0 producer stalls
+elapsed            0.827 s
+throughput         6.04 M msg/s | 180 MiB/s
+latency (ns/msg)   p50 117 | p90 209 | p99 366 | p99.9 706 | p99.99 13399 | max 291132
+top-of-book        1805813 changes | 1805813 consumed | 0 producer stalls
 unknown order refs 0
 ```
 
