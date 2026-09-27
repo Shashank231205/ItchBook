@@ -11,6 +11,11 @@ price-time-priority order book for every instrument. Top-of-book changes go to a
 thread over a lock-free SPSC queue. The hot path never allocates, locks or makes a virtual
 call, and every message is timed with the CPU cycle counter.
 
+### ▶ [Live demo](https://shashank231205.github.io/ItchBook/)
+
+The same C++ engine compiled to WebAssembly, replaying an ITCH feed in your browser with a live
+depth ladder, trade tape and an in-browser benchmark.
+
 ## Highlights
 
 - **Zero-copy parsing**: `mmap` plus compile-time message dispatch through C++20 concepts. A
@@ -47,6 +52,7 @@ include/itchbook/
 └── sim/           deterministic synthetic ITCH feed generator
 src/               out-of-line implementations
 apps/              itchbook-replay, itchbook-gen
+web/               WebAssembly bindings and the live demo page
 tests/             GoogleTest suite (47 tests)
 benchmarks/        Google Benchmark suite
 docs/DESIGN.md     design decisions, complexity, trade-offs
