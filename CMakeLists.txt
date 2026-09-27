@@ -22,14 +22,27 @@ option(ITCHBOOK_NATIVE "Tune code generation for the build machine (-march=nativ
 option(ITCHBOOK_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 set(ITCHBOOK_SANITIZERS "" CACHE STRING "Comma-separated sanitizers, e.g. address,undefined or thread")
 
+# The WebAssembly build (emcmake cmake ...) only produces the browser demo module.
+if(EMSCRIPTEN)
+  set(ITCHBOOK_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(ITCHBOOK_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+  set(ITCHBOOK_BUILD_APPS OFF CACHE BOOL "" FORCE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(CompilerWarnings)
 include(Sanitizers)
 include(Dependencies)
 
-find_package(Threads REQUIRED)
+if(NOT EMSCRIPTEN)
+  find_package(Threads REQUIRED)
+endif()
 
 add_subdirectory(src)
+
+if(EMSCRIPTEN)
+  add_subdirectory(web)
+endif()
 
 if(ITCHBOOK_BUILD_APPS)
   add_subdirectory(apps)

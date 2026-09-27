@@ -19,3 +19,7 @@ perf.data*
 .idea/
 .cache/
 *.swp
+
+# Generated WebAssembly build output
+web/public/itchbook.js
+web/public/itchbook.wasm
